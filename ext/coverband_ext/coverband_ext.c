@@ -8,19 +8,49 @@
 
 ************************************************/
 
-#include "ruby.h"
+#include <stdio.h>
+#include <sys/time.h>
+#include <ruby.h>
+#include <ruby/encoding.h>
 
-static VALUE hello_world(VALUE mod)
+static VALUE
+rb_profile_start(VALUE module, VALUE usec)
 {
-  return rb_str_new2("hello world");
+    struct itimerval timer;
+    timer.it_interval.tv_sec = 0;
+    timer.it_interval.tv_usec = (suseconds_t)NUM2LONG(usec);
+    timer.it_value = timer.it_interval;
+    setitimer(ITIMER_REAL, &timer, 0);
+
+    return Qnil;
+}
+
+static VALUE
+rb_profile_stop(VALUE module)
+{
+    struct itimerval timer;
+    memset(&timer, 0, sizeof(timer));
+    setitimer(ITIMER_REAL, &timer, 0);
+
+    return Qnil;
+}
+
+static VALUE
+rb_profile_block(VALUE module, VALUE usec)
+{
+    rb_need_block();
+
+    rb_profile_start(module, usec);
+    rb_yield(Qundef);
+    rb_profile_stop(module);
+
+    return Qnil;
 }
 
 void Init_coverband_ext()
 {
-    /* VALUE rb_mCoverage = rb_define_module("Coverage"); */
-    /* rb_define_module_function(rb_mCoverage, "start", rb_coverage_start, 0); */
-    /* rb_define_module_function(rb_mCoverage, "result", rb_coverage_result, 0); */
-    /* rb_gc_register_address(&rb_coverages); */
     VALUE mCoverbandExt = rb_define_module("CoverbandExt");
-    rb_define_singleton_method(mCoverbandExt, "hello_world", hello_world, 0);
+    rb_define_module_function(mCoverbandExt, "profile_block", rb_profile_block, 1);
+    rb_define_module_function(mCoverbandExt, "stop", rb_profile_stop, 0);
+    rb_define_module_function(mCoverbandExt, "start", rb_profile_start, 1);
 }
