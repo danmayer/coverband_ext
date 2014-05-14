@@ -7,6 +7,10 @@ require 'coverband_ext'
 
 module CoverbandExt
 
+  def self.report(trace_point)
+    puts "#{trace_point.path}:#{trace_point.lineno}"
+  end
+
   def self.profile(millisecs=1, &blk)
     stacks = []
     thread = Thread.current
@@ -33,12 +37,19 @@ module CoverbandExt
 
 end
 
-def fib( n )
-  return  n  if ( 0..1 ).include? n
-  ( fib( n - 1 ) + fib( n - 2 ) )
-end
+# def fib( n )
+#   return  n  if ( 0..1 ).include? n
+#   ( fib( n - 1 ) + fib( n - 2 ) )
+# end
 
-stacks = CoverbandExt.profile do
-                    fib(30)
-                  end
-puts stacks.first.inspect
+# stacks = CoverbandExt.profile do
+#                     fib(30)
+#                   end
+# puts stacks.first.inspect
+
+CoverbandExt.linesstart
+puts "mooo"
+o = Object.new
+CoverbandExt.linesstop
+
+puts "end"
