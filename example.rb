@@ -11,31 +11,17 @@ module CoverbandExt
     puts "#{trace_point.path}:#{trace_point.lineno}"
   end
 
-  def self.profile(millisecs=1, &blk)
-    stacks = []
-    thread = Thread.current
-    last_time = Time.new
-
-    new_api = thread.respond_to?(:backtrace_locations)
-
-    trap('ALRM') do
-      CoverbandExt.stop
-      stack = (new_api ? thread.backtrace_locations : thread.backtrace)
-      # I am not sure if this is ensured to run in the thread
-      # though in my samples it always does
-      if thread == Thread.current
-        stack = stack[2..-1]
-      end
-      stacks << stack
-      CoverbandExt.start(millisecs * 1000)
-    end
-
-    profile_block(millisecs * 1000, &blk)
-
-    stacks
-  end
-
 end
+
+module Coverband
+  class Base
+    def add_from_tracepoint(trace_point)
+      puts "#{trace_point.path}:#{trace_point.lineno}"
+      #add_file(trace_point.path, trace_point.lineno)         
+    end
+  end
+end
+
 
 # def fib( n )
 #   return  n  if ( 0..1 ).include? n
@@ -47,9 +33,14 @@ end
 #                   end
 # puts stacks.first.inspect
 
-CoverbandExt.linesstart
+CoverbandExt.line_trace_start
 puts "mooo"
 o = Object.new
-CoverbandExt.linesstop
+CoverbandExt.lines_trace_stop
+
+CoverbandExt.line_trace_start
+puts "mooo2"
+o = Object.new
+CoverbandExt.lines_trace_stop
 
 puts "end"

@@ -28,13 +28,12 @@ trace_line_handler(VALUE tpval, void *data)
 {
   // Call puts, from Kernel
   //rb_funcall(rb_mKernel, rb_intern("puts"), 1, tpval);
-  
-  //call method in my module
+  //call method in Coverband
   rb_funcall(rb_const_get(rb_cObject, rb_intern("CoverbandExt")), rb_intern("report"), 1, tpval);
 }
 
 static VALUE
-rb_lines_start(VALUE module)
+ext_line_trace_start(VALUE module)
 {
   linetracer = rb_tracepoint_new(Qnil, RUBY_EVENT_LINE, trace_line_handler, 0);
   rb_tracepoint_enable(linetracer);
@@ -42,7 +41,7 @@ rb_lines_start(VALUE module)
 }
 
 static VALUE
-rb_lines_stop(VALUE module)
+ext_lines_trace_stop(VALUE module)
 {
   rb_tracepoint_disable(linetracer);
   return Qnil;
@@ -51,6 +50,6 @@ rb_lines_stop(VALUE module)
 void Init_coverband_ext( void)
 {
     VALUE mCoverbandExt = rb_define_module("CoverbandExt");
-    rb_define_module_function(mCoverbandExt, "linesstop", rb_lines_stop, 0);
-    rb_define_module_function(mCoverbandExt, "linesstart", rb_lines_start, 0);
+    rb_define_module_function(mCoverbandExt, "line_trace_start", ext_line_trace_start, 0);
+    rb_define_module_function(mCoverbandExt, "lines_trace_stop", ext_lines_trace_stop, 0);
 }
