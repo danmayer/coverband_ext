@@ -20,45 +20,11 @@
 #include <sys/time.h>
 #include <pthread.h>
 
-static VALUE
-rb_profile_start(VALUE module, VALUE usec)
-{
-    struct itimerval timer;
-    timer.it_interval.tv_sec = 0;
-    timer.it_interval.tv_usec = (suseconds_t)NUM2LONG(usec);
-    timer.it_value = timer.it_interval;
-    setitimer(ITIMER_REAL, &timer, 0);
-
-    return Qnil;
-}
-
-static VALUE
-rb_profile_stop(VALUE module)
-{
-    struct itimerval timer;
-    memset(&timer, 0, sizeof(timer));
-    setitimer(ITIMER_REAL, &timer, 0);
-
-    return Qnil;
-}
-
-static VALUE
-rb_profile_block(VALUE module, VALUE usec)
-{
-    rb_need_block();
-
-    rb_profile_start(module, usec);
-    rb_yield(Qundef);
-    rb_profile_stop(module);
-
-    return Qnil;
-}
-
 static VALUE linetracer;
-static void stackprof_newobj_handler(VALUE, void*);
+static void trace_line_handler(VALUE, void*);
 
 static void
-stackprof_newobj_handler(VALUE tpval, void *data)
+trace_line_handler(VALUE tpval, void *data)
 {
   // Call puts, from Kernel
   //rb_funcall(rb_mKernel, rb_intern("puts"), 1, tpval);
@@ -70,22 +36,21 @@ stackprof_newobj_handler(VALUE tpval, void *data)
 static VALUE
 rb_lines_start(VALUE module)
 {
-   linetracer = rb_tracepoint_new(Qnil, RUBY_EVENT_LINE, stackprof_newobj_handler, 0);
-   rb_tracepoint_enable(linetracer);
+  linetracer = rb_tracepoint_new(Qnil, RUBY_EVENT_LINE, trace_line_handler, 0);
+  rb_tracepoint_enable(linetracer);
+  return Qnil;
 }
 
 static VALUE
 rb_lines_stop(VALUE module)
 {
   rb_tracepoint_disable(linetracer);
+  return Qnil;
 }
 
-void Init_coverband_ext()
+void Init_coverband_ext( void)
 {
     VALUE mCoverbandExt = rb_define_module("CoverbandExt");
-    rb_define_module_function(mCoverbandExt, "profile_block", rb_profile_block, 1);
-    rb_define_module_function(mCoverbandExt, "stop", rb_profile_stop, 0);
-    rb_define_module_function(mCoverbandExt, "start", rb_profile_start, 1);
     rb_define_module_function(mCoverbandExt, "linesstop", rb_lines_stop, 0);
     rb_define_module_function(mCoverbandExt, "linesstart", rb_lines_start, 0);
 }
