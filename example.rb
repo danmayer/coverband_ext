@@ -14,14 +14,14 @@ module CoverbandExt
 
 end
 
-#module Coverband
-#  class Base
-#    def add_from_tracepoint(trace_point)
-#      #puts "#{trace_point.path}:#{trace_point.lineno}"
-#      #add_file(trace_point.path, trace_point.lineno)         
-#    end
-#  end
-#end
+module Coverband
+  class Base
+    def add_from_tracepoint(trace_point)
+      puts "#{trace_point.inspect}"
+      #add_file(trace_point.path, trace_point.lineno)         
+    end
+  end
+end
 
 
 # def fib( n )
