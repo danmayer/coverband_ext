@@ -8,78 +8,22 @@
 
 ************************************************/
 
-#include <stdio.h>
-#include <sys/time.h>
 #include <ruby.h>
-#include <ruby/encoding.h>
-//#include <ruby/debug.h>
-#include <ruby/st.h>
-#include <ruby/io.h>
-#include <ruby/intern.h>
-#include <ruby/vm.h>
-#include <ruby/encoding.h>
-#include <signal.h>
-#include "/Users/danmayer/projects/coverband_ext/ext/coverband_ext/ruby_headers/193/vm_core.h"
-#include <sys/time.h>
-#include <sys/resource.h>
 
+// TODO I read below do I need to do this for my variables below?
 // If you create a Ruby object from C and store it in a C global variable without exporting it to Ruby, you must at least tell the garbage collector about it, lest ye be reaped inadvertently:
-//VALUE obj;
-//obj = rb_ary_new();
-//rb_global_variable(obj);
+// VALUE obj;
+// obj = rb_ary_new();
+// rb_global_variable(obj);
+
 static VALUE currentCoverbandBase;
-static VALUE linetracer_ext;
-
 static void trace_line_handler_ext(VALUE rb_event_flag_t, VALUE data, VALUE self, ID id, VALUE klass);
-
-static VALUE linetracer;
-static void trace_line_handler(VALUE, void*);
-
-static void
-trace_line_handler(VALUE tpval, void *data)
-{
-  // Call puts, from Kernel
-  //rb_funcall(rb_mKernel, rb_intern("puts"), 1, tpval);
-  //call method in Coverband
-  rb_funcall(rb_const_get(rb_cObject, rb_intern("CoverbandExt")), rb_intern("report"), 1, tpval);
-}
-
-static VALUE
-ext_line_trace_start(VALUE module)
-{
-  //linetracer = rb_tracepoint_new(Qnil, RUBY_EVENT_LINE, trace_line_handler, 0);
-  //rb_tracepoint_enable(linetracer);
-  return Qnil;
-}
-
-static VALUE
-ext_lines_trace_stop(VALUE module)
-{
-  //rb_tracepoint_disable(linetracer);
-  return Qnil;
-}
-
 
 static void
 trace_line_handler_ext(VALUE rb_event_flag_t, VALUE data, VALUE self, ID id, VALUE klass)
 {
-  // Call puts, from Kernel
-  //rb_funcall(rb_mKernel, rb_intern("puts"), 1, tpval);
-  //rb_funcall(rb_mKernel, rb_intern("puts"), 1, rb_event_flag_t);
-  //rb_funcall(rb_mKernel, rb_intern("puts"), 1, data);
-  ///rb_funcall(rb_mKernel, rb_intern("puts"), 1, self);
-  //rb_funcall(rb_mKernel, rb_intern("puts"), 1, id);
-  //rb_funcall(rb_mKernel, rb_intern("puts"), 1, klass);
-
-
-  const char *srcfile = rb_sourcefile();
-  int line = rb_sourceline();
-  //rb_funcall(rb_mKernel, rb_intern("puts"), INT2NUM(line));
-
-  //call method in Coverband
-  //rb_funcall(rb_const_get(rb_cObject, rb_intern("CoverbandExt")), rb_intern("report"), 1, tpval);
-  //rb_funcall(rb_mKernel, rb_intern("puts"), 1, currentCoverbandBase);
-  rb_funcall(currentCoverbandBase, rb_intern("add_file"), 2, rb_str_new2(srcfile),INT2NUM(line));
+  // TODO moving regex from ruby to this point and doing the regex in C would dramatically reduce the perf cost of coverband
+  rb_funcall(currentCoverbandBase, rb_intern("add_file"), 2, rb_str_new2(rb_sourcefile()),INT2NUM(rb_sourceline()));
 }
 
 static VALUE 
@@ -89,38 +33,32 @@ cb_extended(VALUE self) {
 
 static VALUE
 cb_set_tracer(VALUE self) {
-  //VALUE rb_call_super(int argc, VALUE *args)
-  //Calls the current method in the superclass of the current object.
-  //rb_funcall(rb_mKernel, rb_intern("puts"), 1, rb_intern("ext set trace"));
-  currentCoverbandBase = self;
-  //linetracer_ext = rb_tracepoint_new(Qnil, RUBY_EVENT_LINE, trace_line_handler_ext, 0);
-  //linetracer_ext = rb_add_event_hook(trace_line_handler_ext, RUBY_EVENT_ALL, 0);
-
-  // #if defined(RB_EVENT_HOOKS_HAVE_CALLBACK_DATA) || defined(RUBY_EVENT_VM)
-  //  rb_add_event_hook(trace_line_handler_ext, RUBY_EVENT_LINE, 0);
-  //#else
-  //  rb_add_event_hook(trace_line_handler_ext, RUBY_EVENT_LINE);
-  //#endif
+  if(!rb_iv_get(self, "@tracer_set")) {
+    // TODO there has got to be a better way to do this
+    // somehow have self in the hook point to the class. Is this thread safe
+    currentCoverbandBase = self;
+  
+    // NOTE: We are using rb_add_event_hook opposed to rb_tracepoint_new for 1.9.X compat
+    // not using higher level C functions of set_trace_func to avoid extra overhead we don't need since we only need the RUBY_EVENT_LINE hook as well as only needing file / line number opposed to everything else.
+    // TODO possibly use rb_thread_add_event_hook
     rb_add_event_hook(trace_line_handler_ext, RUBY_EVENT_LINE, 0);
-    //rb_tracepoint_enable(linetracer_ext);
+    rb_iv_set(self, "@tracer_set", Qtrue);
+  }
   return Qnil;
 }
 
 static VALUE
 cb_unset_tracer(VALUE self) {
-  //rb_funcall(rb_mKernel, rb_intern("puts"), 1, rb_intern("ext unset trace"));
-  currentCoverbandBase = Qnil;
-  rb_remove_event_hook(trace_line_handler_ext);
-  //rb_tracepoint_disable(linetracer_ext);
+  if(rb_iv_get(self, "@tracer_set")) {
+    currentCoverbandBase = Qnil;
+    rb_remove_event_hook(trace_line_handler_ext);
+    rb_iv_set(self, "@tracer_set", Qfalse);
+  }
   return Qnil;
 }
 
 void Init_coverband_ext(void)
 {
-  //VALUE mCoverbandExt = rb_define_module("CoverbandExt");
-  // rb_define_module_function(mCoverbandExt, "line_trace_start", ext_line_trace_start, 0);
-  //rb_define_module_function(mCoverbandExt, "lines_trace_stop", ext_lines_trace_stop, 0);
-
   VALUE coverbandBase = rb_path2class("Coverband::Base");
   rb_define_method(coverbandBase, "extended?", cb_extended, 0);
   rb_define_method(coverbandBase, "set_tracer", cb_set_tracer, 0);
