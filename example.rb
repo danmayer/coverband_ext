@@ -14,14 +14,22 @@ module CoverbandExt
 
 end
 
-module Coverband
-  class Base
-    def add_from_tracepoint(trace_point)
-      puts "#{trace_point.inspect}"
-      #add_file(trace_point.path, trace_point.lineno)         
-    end
-  end
-end
+###
+# quick way to override methods for testing without releasing a new gem
+###
+#module Coverband
+#  class Base
+#    def add_from_tracepoint(trace_point)
+#      #puts "#{trace_point.inspect}"
+#      #add_file(trace_point.path, trace_point.lineno)         
+#    end
+#
+#    def add_file(file, line)
+#      puts "file: #{file}"
+#      puts "line: #{line}"
+#    end
+#  end
+#end
 
 
 # def fib( n )

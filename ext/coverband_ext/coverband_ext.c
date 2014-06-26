@@ -19,8 +19,8 @@
 #include <ruby/vm.h>
 #include <ruby/encoding.h>
 #include <signal.h>
+#include "/Users/danmayer/projects/coverband_ext/ext/coverband_ext/ruby_headers/193/vm_core.h"
 #include <sys/time.h>
-#include <pthread.h>
 #include <sys/resource.h>
 
 // If you create a Ruby object from C and store it in a C global variable without exporting it to Ruby, you must at least tell the garbage collector about it, lest ye be reaped inadvertently:
@@ -59,20 +59,27 @@ ext_lines_trace_stop(VALUE module)
   return Qnil;
 }
 
+
 static void
 trace_line_handler_ext(VALUE rb_event_flag_t, VALUE data, VALUE self, ID id, VALUE klass)
 {
   // Call puts, from Kernel
   //rb_funcall(rb_mKernel, rb_intern("puts"), 1, tpval);
-  rb_funcall(rb_mKernel, rb_intern("puts"), 1, rb_event_flag_t);
-  rb_funcall(rb_mKernel, rb_intern("puts"), 1, data);
-  rb_funcall(rb_mKernel, rb_intern("puts"), 1, self);
-  rb_funcall(rb_mKernel, rb_intern("puts"), 1, id);
-  rb_funcall(rb_mKernel, rb_intern("puts"), 1, klass);
+  //rb_funcall(rb_mKernel, rb_intern("puts"), 1, rb_event_flag_t);
+  //rb_funcall(rb_mKernel, rb_intern("puts"), 1, data);
+  ///rb_funcall(rb_mKernel, rb_intern("puts"), 1, self);
+  //rb_funcall(rb_mKernel, rb_intern("puts"), 1, id);
+  //rb_funcall(rb_mKernel, rb_intern("puts"), 1, klass);
+
+
+  const char *srcfile = rb_sourcefile();
+  int line = rb_sourceline();
+  //rb_funcall(rb_mKernel, rb_intern("puts"), INT2NUM(line));
+
   //call method in Coverband
   //rb_funcall(rb_const_get(rb_cObject, rb_intern("CoverbandExt")), rb_intern("report"), 1, tpval);
   //rb_funcall(rb_mKernel, rb_intern("puts"), 1, currentCoverbandBase);
-  //rb_funcall(currentCoverbandBase, rb_intern("add_from_tracepoint"), 1, data);
+  rb_funcall(currentCoverbandBase, rb_intern("add_file"), 2, rb_str_new2(srcfile),INT2NUM(line));
 }
 
 static VALUE 
@@ -94,7 +101,7 @@ cb_set_tracer(VALUE self) {
   //#else
   //  rb_add_event_hook(trace_line_handler_ext, RUBY_EVENT_LINE);
   //#endif
-    rb_add_event_hook(call_trace_func, RUBY_EVENT_LINE, trace_line_handler_ext);
+    rb_add_event_hook(trace_line_handler_ext, RUBY_EVENT_LINE, 0);
     //rb_tracepoint_enable(linetracer_ext);
   return Qnil;
 }
