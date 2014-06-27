@@ -22,8 +22,22 @@ static void trace_line_handler_ext(VALUE rb_event_flag_t, VALUE data, VALUE self
 static void
 trace_line_handler_ext(VALUE rb_event_flag_t, VALUE data, VALUE self, ID id, VALUE klass)
 {
-  // TODO moving regex from ruby to this point and doing the regex in C would dramatically reduce the perf cost of coverband
-  rb_funcall(currentCoverbandBase, rb_intern("add_file"), 2, rb_str_new2(rb_sourcefile()),INT2NUM(rb_sourceline()));
+  // TODO at the moment ignore patterns are not supported by the c_ext
+  // since they were mostly added to improve the ruby version perf might not matter much
+  // anyways would be good to add, but need some C help or research to convert
+  // !@ignore_patterns.any?{|pattern| file.match(/#{pattern}/)
+
+  const char *srcfile = rb_sourcefile();
+  VALUE proj_dir = rb_iv_get(currentCoverbandBase, "@project_directory");
+  const char * c_str_proj_dir = StringValueCStr(proj_dir);
+
+  if((strstr(srcfile, "gems") == NULL) &&
+     (strstr(srcfile, "internal:prelude") == NULL) &&
+     (strstr(srcfile, proj_dir) == NULL)
+    ) {
+    rb_funcall(currentCoverbandBase, rb_intern("add_file_without_checks"), 2, rb_str_new2(srcfile), INT2NUM(rb_sourceline()));
+  }
+
 }
 
 static VALUE 
