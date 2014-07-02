@@ -1,6 +1,6 @@
 # CoverbandExt
 
-TODO: Write a gem description
+This is a native C extension to run coverband on Ruby 1.9.3 much much faster that with the pure Ruby version.
 
 ## Installation
 
@@ -18,7 +18,7 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+Follow the normal Coverband usage... Include this gem below the coverband gem in your `Gemfile`. Make sure you are on Coverband 0.0.27 or above to have coverband detect and use this extension.
 
 ## Contributing
 
