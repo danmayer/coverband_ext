@@ -16,7 +16,6 @@
 // obj = rb_ary_new();
 // rb_global_variable(obj);
 
-static VALUE currentCoverbandBase;
 static void trace_line_handler_ext(VALUE rb_event_flag_t, VALUE data, VALUE self, ID id, VALUE klass);
 
 static void
@@ -26,10 +25,11 @@ trace_line_handler_ext(VALUE rb_event_flag_t, VALUE data, VALUE self, ID id, VAL
   // since they were mostly added to improve the ruby version perf might not matter much
   // anyways would be good to add, but need some C help or research to convert
   // !@ignore_patterns.any?{|pattern| file.match(/#{pattern}/)
-
+  VALUE currentCoverbandBase = rb_funcall(rb_path2class("Coverband::Base"), rb_intern("instance"), 0);
   const char *srcfile = rb_sourcefile();
   VALUE proj_dir = rb_iv_get(currentCoverbandBase, "@project_directory");
   const char * c_str_proj_dir = StringValueCStr(proj_dir);
+
 
   if((strstr(srcfile, "gems") == NULL) &&
      (strstr(srcfile, "internal:prelude") == NULL) &&
@@ -47,11 +47,7 @@ cb_extended(VALUE self) {
 
 static VALUE
 cb_set_tracer(VALUE self) {
-  if(!rb_iv_get(self, "@tracer_set")) {
-    // TODO there has got to be a better way to do this
-    // somehow have self in the hook point to the class. Is this thread safe
-    currentCoverbandBase = self;
-  
+  if(!rb_iv_get(self, "@tracer_set")) {  
     // NOTE: We are using rb_add_event_hook opposed to rb_tracepoint_new for 1.9.X compat
     // not using higher level C functions of set_trace_func to avoid extra overhead we don't need since we only need the RUBY_EVENT_LINE hook as well as only needing file / line number opposed to everything else.
     // TODO possibly use rb_thread_add_event_hook
@@ -64,7 +60,6 @@ cb_set_tracer(VALUE self) {
 static VALUE
 cb_unset_tracer(VALUE self) {
   if(rb_iv_get(self, "@tracer_set")) {
-    currentCoverbandBase = Qnil;
     rb_remove_event_hook(trace_line_handler_ext);
     rb_iv_set(self, "@tracer_set", Qfalse);
   }

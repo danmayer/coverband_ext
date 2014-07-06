@@ -69,7 +69,7 @@ Coverband.configure do |config|
   config.verbose           = true
 end
 
-coverband = Coverband::Base.new
+coverband = Coverband::Base.instance
 puts "is coverband extended: #{coverband.extended?}"
 
 coverband.start
