@@ -30,10 +30,9 @@ trace_line_handler_ext(VALUE rb_event_flag_t, VALUE data, VALUE self, ID id, VAL
   VALUE proj_dir = rb_iv_get(currentCoverbandBase, "@project_directory");
   const char * c_str_proj_dir = StringValueCStr(proj_dir);
 
-
   if((strstr(srcfile, "gems") == NULL) &&
      (strstr(srcfile, "internal:prelude") == NULL) &&
-     (strstr(srcfile, proj_dir) == NULL)
+     (strstr(srcfile, c_str_proj_dir) != NULL)
     ) {
     rb_funcall(currentCoverbandBase, rb_intern("add_file_without_checks"), 2, rb_str_new2(srcfile), INT2NUM(rb_sourceline()));
   }
