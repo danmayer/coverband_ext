@@ -1,3 +1,9 @@
+###
+# This file is just for me to quickly test and verify a few things are working as expected.
+# Beyond testing that functionality works it makes it easy to override parts
+# of the coverband gem before making changes back in the host gem.
+###
+
 # bundle exec rake build
 # gem uninstall coverband_ext
 # gem install pkg/coverband_ext-0.0.1.gem
