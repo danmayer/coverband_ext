@@ -8,7 +8,7 @@ This gem does nothing on its own. So make sure you already have setup the [cover
 
 Add this line to your application's Gemfile, after the existing coverband line:
 
-    gem 'coverband_ext'
+    gem 'coverband'
     gem 'coverband_ext'
 
 And then execute:
