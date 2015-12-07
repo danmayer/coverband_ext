@@ -10,6 +10,21 @@
 
 #include <ruby.h>
 
+static int
+any_ignore_patterns( VALUE rb_ignore_patterns, const char *srcfile ) {
+  int ignore_patterns_len = RARRAY_LEN(rb_ignore_patterns);
+  VALUE * ignore_patterns = RARRAY_PTR(rb_ignore_patterns);
+  char * ignore_pattern;
+  int i;
+  for(i = 0; i < ignore_patterns_len; i++) {
+    ignore_pattern  = StringValueCStr(ignore_patterns[i]);
+    if (strstr(srcfile, ignore_pattern)) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
 // TODO I read below do I need to do this for my variables below?
 // If you create a Ruby object from C and store it in a C global variable without exporting it to Ruby, you must at least tell the garbage collector about it, lest ye be reaped inadvertently:
 // VALUE obj;
@@ -21,10 +36,6 @@ static void trace_line_handler_ext(VALUE rb_event_flag_t, VALUE data, VALUE self
 static void
 trace_line_handler_ext(VALUE rb_event_flag_t, VALUE data, VALUE self, ID id, VALUE klass)
 {
-  // TODO at the moment ignore patterns are not supported by the c_ext
-  // since they were mostly added to improve the ruby version perf might not matter much
-  // anyways would be good to add, but need some C help or research to convert
-  // !@ignore_patterns.any?{|pattern| file.match(/#{pattern}/)
   VALUE currentCoverbandBase = rb_funcall(rb_path2class("Coverband::Base"), rb_intern("instance"), 0);
   const char *srcfile = rb_sourcefile();
   VALUE proj_dir = rb_iv_get(currentCoverbandBase, "@project_directory");
@@ -32,21 +43,22 @@ trace_line_handler_ext(VALUE rb_event_flag_t, VALUE data, VALUE self, ID id, VAL
 
   if((strstr(srcfile, "gems") == NULL) &&
      (strstr(srcfile, "internal:prelude") == NULL) &&
-     (strstr(srcfile, c_str_proj_dir) != NULL)
+     (strstr(srcfile, c_str_proj_dir) != NULL) &&
+     (!any_ignore_patterns( rb_iv_get(currentCoverbandBase, "@ignore_patterns"), srcfile))
     ) {
     rb_funcall(currentCoverbandBase, rb_intern("add_file_without_checks"), 2, rb_str_new2(srcfile), INT2NUM(rb_sourceline()));
   }
 
 }
 
-static VALUE 
+static VALUE
 cb_extended(VALUE self) {
   return Qtrue;
 }
 
 static VALUE
 cb_set_tracer(VALUE self) {
-  if(!rb_iv_get(self, "@tracer_set")) {  
+  if(!rb_iv_get(self, "@tracer_set")) {
     // NOTE: We are using rb_add_event_hook opposed to rb_tracepoint_new for 1.9.X compat
     // not using higher level C functions of set_trace_func to avoid extra overhead we don't need since we only need the RUBY_EVENT_LINE hook as well as only needing file / line number opposed to everything else.
     // TODO possibly use rb_thread_add_event_hook
