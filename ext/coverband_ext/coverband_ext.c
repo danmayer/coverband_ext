@@ -61,8 +61,7 @@ cb_set_tracer(VALUE self) {
   if(!rb_iv_get(self, "@tracer_set")) {
     // NOTE: We are using rb_add_event_hook opposed to rb_tracepoint_new for 1.9.X compat
     // not using higher level C functions of set_trace_func to avoid extra overhead we don't need since we only need the RUBY_EVENT_LINE hook as well as only needing file / line number opposed to everything else.
-    // TODO possibly use rb_thread_add_event_hook
-    rb_add_event_hook(trace_line_handler_ext, RUBY_EVENT_LINE, 0);
+    rb_thread_add_event_hook(rb_thread_current(), trace_line_handler_ext, RUBY_EVENT_LINE, 0);
     rb_iv_set(self, "@tracer_set", Qtrue);
   }
   return Qnil;
@@ -71,7 +70,7 @@ cb_set_tracer(VALUE self) {
 static VALUE
 cb_unset_tracer(VALUE self) {
   if(rb_iv_get(self, "@tracer_set")) {
-    rb_remove_event_hook(trace_line_handler_ext);
+    rb_thread_remove_event_hook(rb_thread_current(), trace_line_handler_ext);
     rb_iv_set(self, "@tracer_set", Qfalse);
   }
   return Qnil;
