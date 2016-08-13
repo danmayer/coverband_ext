@@ -1,5 +1,9 @@
 # CoverbandExt
 
+__NOTE:__ This project is __deprecated__ and no longer needed, with Ruby 2.2.+ and Coverband 1.1, it is unnecessary. If you are on really old Ruby or Coverband, I recommend updating.
+
+---
+
 This is a C extension to run coverband on Ruby 1.9.3+ much much faster that with the pure Ruby version. This has been tested with Ruby 1.9.3, 2.0,x, 2.1.x
 
 This gem does nothing on its own. So make sure you already have setup the [coverband](https://github.com/danmayer/coverband) gem. I recommend using just `coverband` to get run time code coverage working on your project. Then adding this gem once everything is configured and working to reduce the performance overhead of the original gem.
